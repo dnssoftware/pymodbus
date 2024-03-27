@@ -3,6 +3,14 @@ API changes
 Versions (X.Y.Z) where Z > 0 e.g. 3.0.1 do NOT have API changes!
 
 
+API changes 3.7.0
+-----------------
+- class method generate_ssl() added to TLS client (sync/async).
+- removed certfile, keyfile, password from TLS client, please use generate_ssl()
+- on_reconnect_callback() removed from clients (sync/async).
+- on_connect_callback(true/false) added to async clients.
+
+
 API changes 3.6.0
 -----------------
 - framer= is an enum: pymodbus.Framer, but still accept a framer class

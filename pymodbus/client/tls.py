@@ -23,9 +23,6 @@ class AsyncModbusTlsClient(AsyncModbusTcpClient):
     :param port: Port used for communication
     :param source_address: Source address of client
     :param sslctx: SSLContext to use for TLS
-    :param certfile: Cert file path for TLS server request
-    :param keyfile: Key file path for TLS server request
-    :param password: Password for for decrypting private key file
     :param server_hostname: Bind certificate to host
 
     Common optional parameters:
@@ -60,10 +57,7 @@ class AsyncModbusTlsClient(AsyncModbusTcpClient):
         host: str,
         port: int = 802,
         framer: Framer = Framer.TLS,
-        sslctx: ssl.SSLContext | None = None,
-        certfile: str | None = None,
-        keyfile: str | None = None,
-        password: str | None = None,
+        sslctx: ssl.SSLContext = ssl.SSLContext(ssl.PROTOCOL_TLS_CLIENT),
         server_hostname: str | None = None,
         **kwargs: Any,
     ):
@@ -74,9 +68,7 @@ class AsyncModbusTlsClient(AsyncModbusTcpClient):
             port=port,
             framer=framer,
             CommType=CommType.TLS,
-            sslctx=CommParams.generate_ssl(
-                False, certfile, keyfile, password, sslctx=sslctx
-            ),
+            sslctx=sslctx,
             **kwargs,
         )
         self.server_hostname = server_hostname
@@ -91,6 +83,27 @@ class AsyncModbusTlsClient(AsyncModbusTcpClient):
         )
         return await self.base_connect()
 
+    @classmethod
+    def generate_ssl(
+        cls,
+        certfile: str | None = None,
+        keyfile: str | None = None,
+        password: str | None = None,
+    ) -> ssl.SSLContext:
+        """Generate sslctx from cert/key/password.
+
+        :param certfile: Cert file path for TLS server request
+        :param keyfile: Key file path for TLS server request
+        :param password: Password for for decrypting private key file
+
+        Remark:
+        - MODBUS/TCP Security Protocol Specification demands TLSv2 at least
+        - verify_mode is set to ssl.NONE
+        """
+        return CommParams.generate_ssl(
+            False, certfile=certfile, keyfile=keyfile, password=password
+        )
+
 
 class ModbusTlsClient(ModbusTcpClient):
     """**ModbusTlsClient**.
@@ -104,9 +117,6 @@ class ModbusTlsClient(ModbusTcpClient):
     :param port: Port used for communication
     :param source_address: Source address of client
     :param sslctx: SSLContext to use for TLS
-    :param certfile: Cert file path for TLS server request
-    :param keyfile: Key file path for TLS server request
-    :param password: Password for decrypting private key file
     :param server_hostname: Bind certificate to host
     :param kwargs: Experimental parameters
 
@@ -144,10 +154,7 @@ class ModbusTlsClient(ModbusTcpClient):
         host: str,
         port: int = 802,
         framer: Framer = Framer.TLS,
-        sslctx: ssl.SSLContext | None = None,
-        certfile: str | None = None,
-        keyfile: str | None = None,
-        password: str | None = None,
+        sslctx: ssl.SSLContext = ssl.SSLContext(ssl.PROTOCOL_TLS_CLIENT),
         server_hostname: str | None = None,
         **kwargs: Any,
     ):
@@ -155,10 +162,30 @@ class ModbusTlsClient(ModbusTcpClient):
         super().__init__(
             host, CommType=CommType.TLS, port=port, framer=framer, **kwargs
         )
-        self.sslctx = CommParams.generate_ssl(
-            False, certfile, keyfile, password, sslctx=sslctx
-        )
+        self.sslctx = sslctx
         self.server_hostname = server_hostname
+
+
+    @classmethod
+    def generate_ssl(
+        cls,
+        certfile: str | None = None,
+        keyfile: str | None = None,
+        password: str | None = None,
+    ) -> ssl.SSLContext:
+        """Generate sslctx from cert/key/password.
+
+        :param certfile: Cert file path for TLS server request
+        :param keyfile: Key file path for TLS server request
+        :param password: Password for for decrypting private key file
+
+        Remark:
+        - MODBUS/TCP Security Protocol Specification demands TLSv2 at least
+        - verify_mode is set to ssl.NONE
+        """
+        return CommParams.generate_ssl(
+            False, certfile=certfile, keyfile=keyfile, password=password,
+        )
 
     @property
     def connected(self) -> bool:
